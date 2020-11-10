@@ -21,10 +21,12 @@ Router.post("/register", async (req, res) => {
 
 Router.post("/login", async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { username } = req.body;
     const user = await Users.findBy({ username });
 
+    const password = await req.body.password;
     if (user && bcrypt.compare(password, user.password)) {
+      req.session.user = user;
       res.json({ message: "Successful login" });
     } else {
       res.status(401).json({ message: "Bad credentials" });
@@ -34,7 +36,7 @@ Router.post("/login", async (req, res) => {
   }
 });
 
-Router.get("/users", (req, res) => {
+Router.get("/users", secure, (req, res) => {
   Users.find()
     .then((result) => {
       if (result) {
@@ -47,5 +49,26 @@ Router.get("/users", (req, res) => {
       res.status(500).json({ message: "Something went wrong" });
     });
 });
+
+Router.get("/logout", (req, res) => {
+  if (req.session) {
+    req.session.destroy((err) => {
+      if (err) {
+        res.send("error logging out");
+      } else {
+        res.send("User logged out");
+      }
+    });
+  }
+});
+
+function secure(req, res, next) {
+  // check if there is a user in the session
+  if (req.session && req.session.user) {
+    next();
+  } else {
+    res.status(401).json({ message: "Unauthorized!" });
+  }
+}
 
 module.exports = Router;
