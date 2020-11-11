@@ -22,10 +22,10 @@ Router.post("/register", async (req, res) => {
 Router.post("/login", async (req, res) => {
   try {
     const { username } = req.body;
-    const user = await Users.findBy({ username });
+    const [user] = await Users.findBy({ username });
 
-    const password = await req.body.password;
-    if (user && bcrypt.compare(password, user.password)) {
+    const password = req.body.password;
+    if (user && bcrypt.compareSync(password, user.password)) {
       req.session.user = user;
       res.json({ message: "Successful login" });
     } else {
